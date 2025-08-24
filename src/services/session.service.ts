@@ -197,30 +197,28 @@ export class SessionService {
   }
 
   /**
-   * Get random outfits for idle mode (all genders mixed)
+   * Get random outfits for idle mode (single gender consistency)
    */
   getRandomIdleOutfits(): OutfitSelection {
-    const genders = ['male', 'female', 'neutral'];
-    const getRandomFile = (part: string): string => {
-      const allFiles: string[] = [];
-      genders.forEach((gender) => {
-        const files = this.outfitFiles[`${gender}_${part}`] || [];
-        allFiles.push(...files);
-      });
-      
-      if (allFiles.length === 0) {
-        return `male_${part}_1.png`; // fallback
+    // Pick a random gender first for consistency
+    const genders = ['male', 'female'];
+    const selectedGender = genders[Math.floor(Math.random() * genders.length)];
+    
+    const getRandomFileForGender = (part: string, gender: string): string => {
+      const files = this.outfitFiles[`${gender}_${part}`] || [];
+      if (files.length === 0) {
+        return `${gender}_${part}_1.png`; // fallback
       }
-      return allFiles[Math.floor(Math.random() * allFiles.length)];
+      return files[Math.floor(Math.random() * files.length)];
     };
 
     return {
-      head: getRandomFile('head'),
-      top: getRandomFile('top'),
-      bottom: getRandomFile('bottom'),
-      shoes: getRandomFile('shoes'),
-      left: getRandomFile('left'),
-      right: getRandomFile('right'),
+      head: getRandomFileForGender('head', selectedGender),
+      top: getRandomFileForGender('top', selectedGender),
+      bottom: getRandomFileForGender('bottom', selectedGender),
+      shoes: getRandomFileForGender('shoes', selectedGender),
+      left: getRandomFileForGender('left', selectedGender),
+      right: getRandomFileForGender('right', selectedGender),
     };
   }
 
