@@ -79,6 +79,20 @@ export class AppController {
     }
 
     try {
+      // Debug photo data
+      console.log('Photo object:', {
+        originalname: photo.originalname,
+        mimetype: photo.mimetype,
+        size: photo.size,
+        bufferExists: !!photo.buffer,
+        bufferLength: photo.buffer ? photo.buffer.length : 0
+      });
+
+      // Validate photo buffer
+      if (!photo.buffer || photo.buffer.length === 0) {
+        throw new BadRequestException('Photo buffer is empty or invalid');
+      }
+
       // Create session with timeout callback
       const session = this.sessionService.createSession(
         gender as 'male' | 'female' | 'neutral',

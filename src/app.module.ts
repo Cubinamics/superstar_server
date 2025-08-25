@@ -29,9 +29,9 @@ import { ImageService } from './services/image.service';
       rootPath: join(__dirname, '..', '..', 'superstar_front', 'build'),
       exclude: ['/api*', '/events*', '/session*', '/outfits*', '/health*', '/public*'],
     }),
-    // Configure multer for file uploads
+    // Configure multer for file uploads - keep in memory for processing
     MulterModule.register({
-      dest: './uploads', // temporary directory
+      storage: require('multer').memoryStorage(), // Keep files in memory as buffers
       limits: {
         fileSize: 10 * 1024 * 1024, // 10MB limit
       },

@@ -134,9 +134,30 @@ export class ImageService {
    * Resize user photo for web display
    */
   async resizeUserPhoto(buffer: Buffer, maxWidth = 300, maxHeight = 400): Promise<Buffer> {
-    return sharp(buffer)
-      .resize(maxWidth, maxHeight, { fit: 'inside' })
-      .jpeg({ quality: 80 })
-      .toBuffer();
+    console.log('ImageService.resizeUserPhoto called with:', {
+      bufferExists: !!buffer,
+      bufferLength: buffer ? buffer.length : 0,
+      bufferType: typeof buffer,
+      isBuffer: Buffer.isBuffer(buffer),
+      firstBytes: buffer ? Array.from(buffer.slice(0, 10)) : []
+    });
+
+    if (!buffer || buffer.length === 0) {
+      throw new Error('Invalid buffer: buffer is null or empty');
+    }
+
+    if (!Buffer.isBuffer(buffer)) {
+      throw new Error('Invalid buffer: not a Buffer instance');
+    }
+
+    try {
+      return sharp(buffer)
+        .resize(maxWidth, maxHeight, { fit: 'inside' })
+        .jpeg({ quality: 80 })
+        .toBuffer();
+    } catch (error) {
+      console.error('Sharp error details:', error);
+      throw error;
+    }
   }
 }
