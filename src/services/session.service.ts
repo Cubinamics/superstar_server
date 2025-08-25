@@ -201,7 +201,7 @@ export class SessionService {
    */
   getRandomIdleOutfits(): OutfitSelection {
     // Pick a random gender first for consistency
-    const genders = ['male', 'female'];
+    const genders = ['male', 'female', 'neutral'];
     const selectedGender = genders[Math.floor(Math.random() * genders.length)];
     
     const getRandomFileForGender = (part: string, gender: string): string => {
