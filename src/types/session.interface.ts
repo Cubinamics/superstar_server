@@ -8,7 +8,7 @@ export interface Session {
 }
 
 export interface OutfitSelection {
-  head: string;
+  head: string | null; // null when frontend should use default Head.gif
   top: string;
   bottom: string;
   shoes: string;

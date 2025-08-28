@@ -175,7 +175,7 @@ export class SessionService {
   }
 
   /**
-   * Select random outfits for a gender
+   * Select random outfits for a gender (excluding head - frontend uses default GIF)
    */
   private selectRandomOutfits(gender: string): OutfitSelection {
     const getRandomFile = (part: string): string => {
@@ -187,7 +187,7 @@ export class SessionService {
     };
 
     return {
-      head: getRandomFile('head'),
+      head: null, // Frontend will always use Head.gif in idle mode
       top: getRandomFile('top'),
       bottom: getRandomFile('bottom'),
       shoes: getRandomFile('shoes'),
@@ -197,7 +197,7 @@ export class SessionService {
   }
 
   /**
-   * Get random outfits for idle mode (single gender consistency)
+   * Get random outfits for idle mode (single gender consistency, excluding head)
    */
   getRandomIdleOutfits(): OutfitSelection {
     // Pick a random gender first for consistency
@@ -213,7 +213,7 @@ export class SessionService {
     };
 
     return {
-      head: getRandomFileForGender('head', selectedGender),
+      head: null, // Frontend will always use Head.gif in idle mode
       top: getRandomFileForGender('top', selectedGender),
       bottom: getRandomFileForGender('bottom', selectedGender),
       shoes: getRandomFileForGender('shoes', selectedGender),
