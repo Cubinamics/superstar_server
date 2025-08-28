@@ -7,6 +7,7 @@ interface SessionEventData {
   gender: string;
   outfits: any;
   userPhotoToken: string;
+  source?: string; // 'mobile' | 'manual'
 }
 
 @Injectable()
@@ -38,6 +39,7 @@ export class EventsService {
         gender: sessionData.gender,
         outfits: sessionData.outfits,
         userPhotoToken: sessionData.userPhotoToken,
+        source: sessionData.source,
       },
     });
   }

@@ -24,6 +24,7 @@ export class ImageService {
   async composeSnapshot(
     userPhotoBuffer: Buffer,
     outfits: OutfitSelection,
+    autoRotate: boolean = true, // Default true for mobile compatibility
   ): Promise<Buffer> {
     try {
       // Grid configuration (3x3 layout)
@@ -69,10 +70,21 @@ export class ImageService {
 
       // Row 0, Col 1: User Head (center top)
       const { top: headTop, left: headLeft } = getGridPosition(0, 1);
-      const userPhotoResized = await sharp(userPhotoBuffer)
-        .resize(cellWidth, cellHeight, { fit: 'cover' })
-        .rotate() // Auto-rotate based on EXIF data
-        .toBuffer();
+      let userPhotoProcessor = sharp(userPhotoBuffer);
+      
+      // Only auto-rotate for mobile photos (when autoRotate is true)
+      // Mobile photos need -90-degree rotation to be upright in the email
+      if (autoRotate) {
+        userPhotoProcessor = userPhotoProcessor.rotate(-90);
+      }
+      
+      // Resize after rotation using 'contain' to preserve aspect ratio without cropping
+      userPhotoProcessor = userPhotoProcessor.resize(cellWidth, cellHeight, { 
+        fit: 'contain',
+        background: { r: 0, g: 0, b: 0, alpha: 1 } // Black background for letterboxing
+      });
+      
+      const userPhotoResized = await userPhotoProcessor.toBuffer();
 
       composite.push({
         input: userPhotoResized,

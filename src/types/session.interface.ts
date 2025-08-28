@@ -5,6 +5,7 @@ export interface Session {
   selectedOutfits: OutfitSelection;
   createdAt: Date;
   expiresAt: Date;
+  source?: 'mobile' | 'manual'; // Track upload source for rotation handling
 }
 
 export interface OutfitSelection {
@@ -23,5 +24,6 @@ export interface SessionEvent {
     gender?: string;
     userPhotoToken?: string;
     outfits?: OutfitSelection;
+    source?: string; // 'mobile' | 'manual'
   };
 }

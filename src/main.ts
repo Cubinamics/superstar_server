@@ -20,7 +20,7 @@ async function bootstrap() {
   await app.listen(port);
   
   console.log(`🚀 Adidas Superstar Backend running on http://localhost:${port}`);
-  console.log(`📡 SSE Events endpoint: http://localhost:${port}/events`);
+  console.log(`📡 SSE Events endpoint: http://localhost:${port}/api/events`);
   console.log(`🖼️  Static files served from: http://localhost:${port}/public/outfits/`);
 }
 

@@ -65,6 +65,7 @@ export class SessionService {
     gender: 'male' | 'female' | 'neutral',
     userPhoto: Buffer,
     onTimeout: (sessionId: string) => void,
+    source: 'mobile' | 'manual' = 'mobile', // Default to mobile for backwards compatibility
   ): Session {
     const sessionId = this.generateSessionId();
     const selectedOutfits = this.selectRandomOutfits(gender);
@@ -78,6 +79,7 @@ export class SessionService {
       selectedOutfits,
       createdAt: now,
       expiresAt,
+      source,
     };
 
     this.sessions.set(sessionId, session);
@@ -90,7 +92,7 @@ export class SessionService {
     
     this.sessionTimeouts.set(sessionId, timeout);
     
-    console.log(`Session ${sessionId} created, expires at ${expiresAt.toISOString()}`);
+    console.log(`Session ${sessionId} created (${source}), expires at ${expiresAt.toISOString()}`);
     return session;
   }
 

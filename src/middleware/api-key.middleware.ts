@@ -8,12 +8,12 @@ export class ApiKeyMiddleware implements NestMiddleware {
 
   use(req: Request, res: Response, next: NextFunction) {
     // Skip API key check for health endpoint (for monitoring)
-    if (req.path === '/health') {
+    if (req.path === '/health' || req.path === '/api/health') {
       return next();
     }
 
     // Skip API key check for SSE events endpoint (EventSource can't send custom headers)
-    if (req.path === '/events') {
+    if (req.path === '/events' || req.path === '/api/events') {
       return next();
     }
 

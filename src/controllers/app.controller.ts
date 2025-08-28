@@ -19,7 +19,7 @@ import { EventsService } from '../services/events.service';
 import { EmailService } from '../services/email.service';
 import { ImageService } from '../services/image.service';
 
-@Controller()
+@Controller('api')
 export class AppController {
   constructor(
     private readonly sessionService: SessionService,
@@ -68,6 +68,7 @@ export class AppController {
   async createSession(
     @UploadedFile() photo: any,
     @Body('gender') gender: string,
+    @Body('source') source?: string, // 'mobile' or 'manual'
   ) {
     if (!photo) {
       throw new BadRequestException('Photo is required');
@@ -103,6 +104,7 @@ export class AppController {
           console.log(`Session ${sessionId} timed out`);
           this.eventsService.emitTimeoutEvent();
         },
+        source as 'mobile' | 'manual' || 'mobile', // Default to mobile if not specified
       );
 
       // Resize photo for web display
@@ -117,6 +119,7 @@ export class AppController {
         gender: session.gender,
         outfits: session.selectedOutfits,
         userPhotoToken: `data:image/jpeg;base64,${photoBase64}`,
+        source: session.source,
       });
 
       // Return 201 Created as per spec
@@ -156,9 +159,12 @@ export class AppController {
 
     try {
       // Compose snapshot image IN RAM ONLY
+      // Only auto-rotate for mobile photos, not manual uploads
+      const shouldAutoRotate = session.source !== 'manual';
       const snapshotBuffer = await this.imageService.composeSnapshot(
         session.userPhoto,
         session.selectedOutfits,
+        shouldAutoRotate,
       );
 
       // Send email with snapshot attachment
