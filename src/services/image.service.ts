@@ -16,17 +16,26 @@ export class ImageService {
 
   /**
    * Compose final snapshot image
-   * Layout: [Logo_Left] [User_Photo] [Outfit_Parts] [Logo_Right]
+   * Layout: 3x3 Grid matching frontend display
+   * [Logo_Left]    [User_Head]     [Logo_Right]
+   * [Outfit_Left]  [Outfit_Top]    [Outfit_Right]  
+   * [Empty]        [Outfit_Bottom] [Outfit_Shoes]
    */
   async composeSnapshot(
     userPhotoBuffer: Buffer,
     outfits: OutfitSelection,
   ): Promise<Buffer> {
     try {
-      const canvasWidth = 1920;
-      const canvasHeight = 1080;
-      const partWidth = 300;
-      const partHeight = 400;
+      // Grid configuration (3x3 layout)
+      const gridCols = 3;
+      const gridRows = 3;
+      const cellWidth = 400;
+      const cellHeight = 300;
+      const gap = 10;
+      const padding = 20;
+      
+      const canvasWidth = (cellWidth * gridCols) + (gap * (gridCols - 1)) + (padding * 2);
+      const canvasHeight = (cellHeight * gridRows) + (gap * (gridRows - 1)) + (padding * 2);
 
       // Create base canvas
       const canvas = sharp({
@@ -34,72 +43,117 @@ export class ImageService {
           width: canvasWidth,
           height: canvasHeight,
           channels: 4,
-          background: { r: 255, g: 255, b: 255, alpha: 1 },
+          background: { r: 0, g: 0, b: 0, alpha: 1 }, // Black background like frontend
         },
       });
 
       const composite: sharp.OverlayOptions[] = [];
 
-      // Add logos (if they exist)
+      // Helper function to calculate grid position
+      const getGridPosition = (row: number, col: number) => ({
+        top: padding + (row * (cellHeight + gap)),
+        left: padding + (col * (cellWidth + gap)),
+      });
+
+      // Row 0, Col 0: Logo Left
       if (fs.existsSync(this.logoLeftPath)) {
+        const { top, left } = getGridPosition(0, 0);
         composite.push({
           input: await sharp(this.logoLeftPath)
-            .resize(200, 200, { fit: 'inside' })
+            .resize(cellWidth, cellHeight, { fit: 'inside', background: { r: 0, g: 0, b: 0, alpha: 1 } })
             .toBuffer(),
-          top: 50,
-          left: 50,
+          top,
+          left,
         });
       }
 
-      if (fs.existsSync(this.logoRightPath)) {
-        composite.push({
-          input: await sharp(this.logoRightPath)
-            .resize(200, 200, { fit: 'inside' })
-            .toBuffer(),
-          top: 50,
-          left: canvasWidth - 250,
-        });
-      }
-
-      // Add outfit parts first (background layer) - positioned around the head
-      const outfitPositions = [
-        { file: outfits.top, top: 600, left: 600 }, // Move top outfit lower to avoid head
-        { file: outfits.bottom, top: 800, left: 600 }, // Bottom outfit at bottom
-        { file: outfits.left, top: 400, left: 200 }, // Left side outfit
-        { file: outfits.right, top: 400, left: 1300 }, // Right side outfit  
-        { file: outfits.shoes, top: 900, left: 600 }, // Shoes at very bottom
-      ];
-
-      for (const pos of outfitPositions) {
-        const outfitPath = path.join(process.cwd(), 'public', 'outfits', pos.file);
-        if (fs.existsSync(outfitPath)) {
-          try {
-            const outfitResized = await sharp(outfitPath)
-              .resize(partWidth, partHeight, { fit: 'inside' })
-              .toBuffer();
-
-            composite.push({
-              input: outfitResized,
-              top: pos.top,
-              left: pos.left,
-            });
-          } catch (error) {
-            console.warn(`Failed to process outfit image ${pos.file}:`, error);
-          }
-        }
-      }
-
-      // Add user photo at the top (head position)
+      // Row 0, Col 1: User Head (center top)
+      const { top: headTop, left: headLeft } = getGridPosition(0, 1);
       const userPhotoResized = await sharp(userPhotoBuffer)
-        .resize(400, 400, { fit: 'cover' }) // Make it square for head
+        .resize(cellWidth, cellHeight, { fit: 'cover' })
         .rotate() // Auto-rotate based on EXIF data
         .toBuffer();
 
       composite.push({
         input: userPhotoResized,
-        top: 150, // Position at top of canvas
-        left: Math.floor((canvasWidth - 400) / 2), // Center horizontally
+        top: headTop,
+        left: headLeft,
       });
+
+      // Row 0, Col 2: Logo Right
+      if (fs.existsSync(this.logoRightPath)) {
+        const { top, left } = getGridPosition(0, 2);
+        composite.push({
+          input: await sharp(this.logoRightPath)
+            .resize(cellWidth, cellHeight, { fit: 'inside', background: { r: 0, g: 0, b: 0, alpha: 1 } })
+            .toBuffer(),
+          top,
+          left,
+        });
+      }
+
+      // Row 1, Col 0: Left Outfit
+      if (outfits.left) {
+        const outfitPath = path.join(process.cwd(), 'public', 'outfits', outfits.left);
+        if (fs.existsSync(outfitPath)) {
+          const { top, left } = getGridPosition(1, 0);
+          const outfitResized = await sharp(outfitPath)
+            .resize(cellWidth, cellHeight, { fit: 'inside', background: { r: 0, g: 0, b: 0, alpha: 1 } })
+            .toBuffer();
+          composite.push({ input: outfitResized, top, left });
+        }
+      }
+
+      // Row 1, Col 1: Top Outfit
+      if (outfits.top) {
+        const outfitPath = path.join(process.cwd(), 'public', 'outfits', outfits.top);
+        if (fs.existsSync(outfitPath)) {
+          const { top, left } = getGridPosition(1, 1);
+          const outfitResized = await sharp(outfitPath)
+            .resize(cellWidth, cellHeight, { fit: 'inside', background: { r: 0, g: 0, b: 0, alpha: 1 } })
+            .toBuffer();
+          composite.push({ input: outfitResized, top, left });
+        }
+      }
+
+      // Row 1, Col 2: Right Outfit
+      if (outfits.right) {
+        const outfitPath = path.join(process.cwd(), 'public', 'outfits', outfits.right);
+        if (fs.existsSync(outfitPath)) {
+          const { top, left } = getGridPosition(1, 2);
+          const outfitResized = await sharp(outfitPath)
+            .resize(cellWidth, cellHeight, { fit: 'inside', background: { r: 0, g: 0, b: 0, alpha: 1 } })
+            .toBuffer();
+          composite.push({ input: outfitResized, top, left });
+        }
+      }
+
+      // Row 2, Col 0: Empty (grid spacer)
+      // No image here, just empty space
+
+      // Row 2, Col 1: Bottom Outfit
+      if (outfits.bottom) {
+        const outfitPath = path.join(process.cwd(), 'public', 'outfits', outfits.bottom);
+        if (fs.existsSync(outfitPath)) {
+          const { top, left } = getGridPosition(2, 1);
+          const outfitResized = await sharp(outfitPath)
+            .resize(cellWidth, cellHeight, { fit: 'inside', background: { r: 0, g: 0, b: 0, alpha: 1 } })
+            .toBuffer();
+          composite.push({ input: outfitResized, top, left });
+        }
+      }
+
+      // Row 2, Col 2: Shoes
+      if (outfits.shoes) {
+        const outfitPath = path.join(process.cwd(), 'public', 'outfits', outfits.shoes);
+        if (fs.existsSync(outfitPath)) {
+          const { top, left } = getGridPosition(2, 2);
+          const outfitResized = await sharp(outfitPath)
+            .resize(cellWidth, cellHeight, { fit: 'inside', background: { r: 0, g: 0, b: 0, alpha: 1 } })
+            .toBuffer();
+          composite.push({ input: outfitResized, top, left });
+        }
+      }
 
       // Compose final image
       const finalImage = await canvas.composite(composite).png().toBuffer();
