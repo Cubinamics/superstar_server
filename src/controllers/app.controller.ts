@@ -245,6 +245,28 @@ export class AppController {
   }
 
   /**
+   * Test Mailchimp connection and list access
+   */
+  // @Get('test-mailchimp')
+  // async testMailchimp() {
+  //   try {
+  //     const connection = await this.emailService.testConnection();
+  //     const lists = await this.emailService.debugLists();
+      
+  //     return {
+  //       ok: true,
+  //       connection,
+  //       lists,
+  //     };
+  //   } catch (error) {
+  //     return {
+  //       ok: false,
+  //       error: error.message,
+  //     };
+  //   }
+  // }
+
+  /**
    * Health check
    */
   @Get('health')

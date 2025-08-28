@@ -6,18 +6,22 @@ export class EmailService {
   private transporter: nodemailer.Transporter;
 
   constructor() {
-    // Initialize with Mandrill SMTP settings
+    // Initialize with SMTP settings with TLS certificate validation disabled
     this.transporter = nodemailer.createTransport({
-      host: 'smtp.mandrillapp.com',
+      host: 'webmail.superstarprimer.com', // Replace with your SMTP host
       port: 587,
-      secure: false, // Use STARTTLS
+      secure: false,
       auth: {
-        user: process.env.MANDRILL_USERNAME || 'SAVVY PARTNERS MONOPROSOPI IKE', // Your Mandrill username (can be anything)
-        pass: process.env.MANDRILL_API_KEY || 'md-mb-7aMaglGgK5ZIHLvwKSQ', // Your Mandrill API key
+        user: process.env.EMAIL_USER || 'noreply@superstarprimer.com',
+        pass: process.env.EMAIL_PASS || 'g!9BJ5b?_nW64P',
       },
       tls: {
+        // Disable certificate validation (for development/testing only)
         rejectUnauthorized: false,
+        // Alternative: specify the correct servername if known
+        // servername: 'papaki.gr'
       },
+      // Add connection timeout and other reliability options
       connectionTimeout: 60000,
       greetingTimeout: 30000,
       socketTimeout: 60000,
