@@ -44,7 +44,9 @@ export class ImageService {
           width: canvasWidth,
           height: canvasHeight,
           channels: 4,
-          background: { r: 0, g: 0, b: 0, alpha: 1 }, // Black background like frontend
+          // background: { r: 0, g: 0, b: 0, alpha: 1 }, // Black background like frontend
+          //white background for letterboxing
+        background: { r: 255, g: 255, b: 255, alpha: 1 } 
         },
       });
 
@@ -81,7 +83,9 @@ export class ImageService {
       // Resize after rotation using 'contain' to preserve aspect ratio without cropping
       userPhotoProcessor = userPhotoProcessor.resize(cellWidth, cellHeight, { 
         fit: 'contain',
-        background: { r: 0, g: 0, b: 0, alpha: 1 } // Black background for letterboxing
+        // background: { r: 0, g: 0, b: 0, alpha: 1 } // Black background for letterboxing
+        //white background for letterboxing
+        background: { r: 255, g: 255, b: 255, alpha: 1 } 
       });
       
       const userPhotoResized = await userPhotoProcessor.toBuffer();
