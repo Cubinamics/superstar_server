@@ -6,15 +6,25 @@ export class EmailService {
   private transporter: nodemailer.Transporter;
 
   constructor() {
-    // Initialize with dummy SMTP settings - replace with real settings
+    // Initialize with SMTP settings with TLS certificate validation disabled
     this.transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com', // Replace with your SMTP host
+      host: 'webmail.superstarprimer.com', // Replace with your SMTP host
       port: 587,
       secure: false,
       auth: {
-        user: process.env.EMAIL_USER || 'your-email@gmail.com',
-        pass: process.env.EMAIL_PASS || 'your-app-password',
+        user: process.env.EMAIL_USER || 'noreply@superstarprimer.com',
+        pass: process.env.EMAIL_PASS || 'g!9BJ5b?_nW64P',
       },
+      tls: {
+        // Disable certificate validation (for development/testing only)
+        rejectUnauthorized: false,
+        // Alternative: specify the correct servername if known
+        // servername: 'papaki.gr'
+      },
+      // Add connection timeout and other reliability options
+      connectionTimeout: 60000,
+      greetingTimeout: 30000,
+      socketTimeout: 60000,
     });
   }
 

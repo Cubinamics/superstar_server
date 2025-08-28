@@ -12,6 +12,11 @@ export class ApiKeyMiddleware implements NestMiddleware {
       return next();
     }
 
+    // Skip API key check for SSE events endpoint (EventSource can't send custom headers)
+    if (req.path === '/events') {
+      return next();
+    }
+
     // Skip API key check for static files (React frontend)
     if (
       req.path.startsWith('/static/') ||

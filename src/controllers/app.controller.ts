@@ -10,6 +10,7 @@ import {
   BadRequestException,
   NotFoundException,
   HttpException,
+  HttpCode,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
@@ -134,6 +135,7 @@ export class AppController {
    * STRICT SPEC: Returns 202 Accepted, handles 410 Gone for expired sessions
    */
   @Post('session/:id/email')
+  @HttpCode(202) // Explicitly set 202 Accepted status code
   async sendEmail(
     @Param('id') sessionId: string,
     @Body('email') email: string,

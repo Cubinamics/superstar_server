@@ -61,24 +61,13 @@ export class ImageService {
         });
       }
 
-      // Add user photo (center)
-      const userPhotoResized = await sharp(userPhotoBuffer)
-        .resize(400, 600, { fit: 'inside' })
-        .toBuffer();
-
-      composite.push({
-        input: userPhotoResized,
-        top: Math.floor((canvasHeight - 600) / 2),
-        left: Math.floor((canvasWidth - 400) / 2),
-      });
-
-      // Add outfit parts around the user photo
+      // Add outfit parts first (background layer) - positioned around the head
       const outfitPositions = [
-        { file: outfits.top, top: 100, left: 600 },
-        { file: outfits.bottom, top: 500, left: 600 },
-        { file: outfits.left, top: 300, left: 300 },
-        { file: outfits.right, top: 300, left: 1000 },
-        { file: outfits.shoes, top: 700, left: 600 },
+        { file: outfits.top, top: 600, left: 600 }, // Move top outfit lower to avoid head
+        { file: outfits.bottom, top: 800, left: 600 }, // Bottom outfit at bottom
+        { file: outfits.left, top: 400, left: 200 }, // Left side outfit
+        { file: outfits.right, top: 400, left: 1300 }, // Right side outfit  
+        { file: outfits.shoes, top: 900, left: 600 }, // Shoes at very bottom
       ];
 
       for (const pos of outfitPositions) {
@@ -99,6 +88,18 @@ export class ImageService {
           }
         }
       }
+
+      // Add user photo at the top (head position)
+      const userPhotoResized = await sharp(userPhotoBuffer)
+        .resize(400, 400, { fit: 'cover' }) // Make it square for head
+        .rotate() // Auto-rotate based on EXIF data
+        .toBuffer();
+
+      composite.push({
+        input: userPhotoResized,
+        top: 150, // Position at top of canvas
+        left: Math.floor((canvasWidth - 400) / 2), // Center horizontally
+      });
 
       // Compose final image
       const finalImage = await canvas.composite(composite).png().toBuffer();

@@ -45,6 +45,10 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(ApiKeyMiddleware)
-      .forRoutes(AppController);
+      .forRoutes(
+        'session',    // Session endpoints
+        'outfits'     // Outfits endpoint  
+        // Note: 'events' excluded to allow SSE without headers
+      );
   }
 }
