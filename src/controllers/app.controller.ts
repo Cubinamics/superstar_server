@@ -192,6 +192,40 @@ export class AppController {
   }
 
   /**
+   * Skip session (user chose not to provide email)
+   * STRICT SPEC: Returns 202 Accepted and immediately returns to idle
+   */
+  @Post('session/:id/skip')
+  async skipSession(@Param('id') sessionId: string) {
+    try {
+      // Check if session exists and is valid
+      const session = this.sessionService.getSession(sessionId);
+      if (!session) {
+        throw new NotFoundException('Session not found or has expired');
+      }
+
+      // IMMEDIATELY mark session as used and purge all data
+      this.sessionService.markSessionAsUsed(sessionId);
+
+      // Return to idle mode immediately
+      this.eventsService.returnToIdle();
+
+      // Return 202 Accepted as per spec
+      return {
+        ok: true,
+      };
+    } catch (error) {
+      console.error('Error skipping session:', error);
+      
+      if (error.status === 404) {
+        throw error; // Re-throw 404 Not Found
+      }
+      
+      throw new BadRequestException('Failed to skip session');
+    }
+  }
+
+  /**
    * Get outfit files list (for frontend preloading)
    */
   @Get('outfits')
