@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { MulterModule } from '@nestjs/platform-express';
 import { join } from 'path';
@@ -7,6 +7,7 @@ import { SessionService } from './services/session.service';
 import { EventsService } from './services/events.service';
 import { EmailService } from './services/email.service';
 import { ImageService } from './services/image.service';
+import { ApiKeyMiddleware } from './middleware/api-key.middleware';
 
 @Module({
   imports: [
@@ -40,4 +41,10 @@ import { ImageService } from './services/image.service';
   controllers: [AppController],
   providers: [SessionService, EventsService, EmailService, ImageService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(ApiKeyMiddleware)
+      .forRoutes(AppController);
+  }
+}
