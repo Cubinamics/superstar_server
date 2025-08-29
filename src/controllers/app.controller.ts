@@ -34,51 +34,57 @@ export class AppController {
   @Get('events')
   getEvents(@Res() res: Response) {
     console.log('🔴 SSE connection attempt from:', res.req.headers.origin || 'same-origin');
-    console.log('🔴 SSE User-Agent:', res.req.headers['user-agent']);
     
+    // Critical SSE headers for Cloudflare/DigitalOcean
     res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Connection', 'keep-alive');
-    
-    // Set CORS headers for SSE - allow your specific domain
-    const origin = res.req.headers.origin;
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:3001', 
-      'https://superstar-devapp-tsqup.ondigitalocean.app'
-    ];
-    
-    if (allowedOrigins.includes(origin)) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-      console.log('🟢 SSE CORS: Allowed origin:', origin);
-    } else if (!origin) {
-      // For same-origin requests (like when frontend is served by backend)
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      console.log('🟢 SSE CORS: Same-origin request, allowing all');
-    } else {
-      console.log('🔴 SSE CORS: Rejected origin:', origin);
-    }
-    
+    res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Headers', 'Cache-Control');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
-
+    
+    // Cloudflare-specific headers to prevent buffering
+    res.setHeader('CF-Cache-Status', 'DYNAMIC');
+    res.setHeader('CF-RAY', 'bypass');
+    
     console.log('🟢 SSE connection established, sending initial event');
-    // Send initial connection confirmation
+    // Send initial connection confirmation immediately
     res.write('data: {"type":"connected"}\n\n');
+
+    // Send keepalive every 30 seconds to prevent connection timeout
+    const keepaliveInterval = setInterval(() => {
+      if (!res.destroyed) {
+        res.write('data: {"type":"keepalive"}\n\n');
+      }
+    }, 30000);
 
     // Subscribe to events
     const subscription = this.eventsService.getEventStream().subscribe({
       next: (event) => {
-        res.write(`data: ${JSON.stringify(event)}\n\n`);
+        if (!res.destroyed) {
+          res.write(`data: ${JSON.stringify(event)}\n\n`);
+        }
       },
       error: (error) => {
         console.error('SSE error:', error);
-        res.end();
+        clearInterval(keepaliveInterval);
+        if (!res.destroyed) {
+          res.end();
+        }
       },
     });
 
     // Handle client disconnect
     res.on('close', () => {
+      console.log('🔴 SSE client disconnected');
+      clearInterval(keepaliveInterval);
+      subscription.unsubscribe();
+    });
+
+    res.on('error', () => {
+      console.log('🔴 SSE connection error');
+      clearInterval(keepaliveInterval);
       subscription.unsubscribe();
     });
   }
