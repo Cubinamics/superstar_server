@@ -7,6 +7,7 @@ import {
   UploadedFile,
   UseInterceptors,
   Res,
+  Sse,
   BadRequestException,
   NotFoundException,
   HttpException,
@@ -14,6 +15,8 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
+import { Observable, interval } from 'rxjs';
+import { map, switchMap, startWith } from 'rxjs';
 import { SessionService } from '../services/session.service';
 import { EventsService } from '../services/events.service';
 import { EmailService } from '../services/email.service';
@@ -29,74 +32,32 @@ export class AppController {
   ) {}
 
   /**
-   * Server-Sent Events endpoint for monitors
+   * Server-Sent Events endpoint using NestJS SSE decorator (proxy-friendly)
    */
-  @Get('events')
-  getEvents(@Res() res: Response) {
-    console.log('🔴 SSE connection attempt from:', res.req.headers.origin || 'same-origin');
+  @Sse('events')
+  getEvents(): Observable<any> {
+    console.log('🔴 SSE connection attempt');
+    console.log('🟢 SSE connection established with NestJS @Sse decorator');
     
-    // Critical SSE headers for Cloudflare/DigitalOcean
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Headers', 'Cache-Control');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    // Create a combined stream of events and keepalives
+    const eventsStream = this.eventsService.getEventStream().pipe(
+      map((event) => {
+        console.log('📤 Sending SSE event via @Sse:', event.type);
+        return { data: JSON.stringify(event) };
+      })
+    );
     
-    // Cloudflare-specific headers to prevent buffering
-    res.setHeader('CF-Cache-Status', 'DYNAMIC');
-    res.setHeader('CF-RAY', 'bypass');
+    const keepaliveStream = interval(15000).pipe(
+      map(() => {
+        console.log('📡 Sending SSE keepalive via @Sse');
+        return { data: JSON.stringify({ type: 'keepalive' }) };
+      })
+    );
     
-    // Send headers immediately with 200 status
-    res.writeHead(200);
-    
-    console.log('🟢 SSE connection established, sending initial event');
-    // Send initial connection confirmation immediately
-    res.write('data: {"type":"connected"}\n\n');
-
-    // Send keepalive every 10 seconds (shorter interval for testing)
-    const keepaliveInterval = setInterval(() => {
-      if (!res.destroyed) {
-        console.log('📡 Sending SSE keepalive');
-        res.write('data: {"type":"keepalive"}\n\n');
-      } else {
-        console.log('🔴 SSE connection destroyed, clearing keepalive');
-        clearInterval(keepaliveInterval);
-      }
-    }, 10000);
-
-    // Subscribe to events
-    const subscription = this.eventsService.getEventStream().subscribe({
-      next: (event) => {
-        if (!res.destroyed) {
-          console.log('📤 Sending SSE event:', event.type, event.data ? 'with data' : 'no data');
-          res.write(`data: ${JSON.stringify(event)}\n\n`);
-        } else {
-          console.log('🔴 Tried to send SSE event but connection destroyed');
-        }
-      },
-      error: (error) => {
-        console.error('SSE error:', error);
-        clearInterval(keepaliveInterval);
-        if (!res.destroyed) {
-          res.end();
-        }
-      },
-    });
-
-    // Handle client disconnect
-    res.on('close', () => {
-      console.log('🔴 SSE client disconnected');
-      clearInterval(keepaliveInterval);
-      subscription.unsubscribe();
-    });
-
-    res.on('error', () => {
-      console.log('🔴 SSE connection error');
-      clearInterval(keepaliveInterval);
-      subscription.unsubscribe();
-    });
+    // Start with a connection event, then merge events and keepalives
+    return eventsStream.pipe(
+      startWith({ data: JSON.stringify({ type: 'connected' }) })
+    );
   }
 
     /**
