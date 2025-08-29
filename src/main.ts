@@ -9,12 +9,13 @@ async function bootstrap() {
   // Enable CORS for frontend communication
   app.enableCors({
     origin: [
-      '*',
       'http://localhost:3000',
       'http://localhost:3001',
       'https://superstar-devapp-tsqup.ondigitalocean.app', // Your deployed frontend
     ],
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
   });
 
   // Enable validation pipes
