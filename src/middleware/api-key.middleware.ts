@@ -3,8 +3,8 @@ import { Request, Response, NextFunction } from 'express';
 
 @Injectable()
 export class ApiKeyMiddleware implements NestMiddleware {
-  // Hardcoded API key for simplicity - change this for production
-  private readonly API_KEY = 'adidas-superstar-2025-secret';
+  // API key from environment variable for security
+  private readonly API_KEY = process.env.API_KEY || 'adidas-superstar-2025-secret';
 
   use(req: Request, res: Response, next: NextFunction) {
     // Skip API key check for health endpoint (for monitoring)
