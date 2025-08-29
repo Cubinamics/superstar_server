@@ -33,12 +33,36 @@ export class AppController {
    */
   @Get('events')
   getEvents(@Res() res: Response) {
+    console.log('🔴 SSE connection attempt from:', res.req.headers.origin || 'same-origin');
+    console.log('🔴 SSE User-Agent:', res.req.headers['user-agent']);
+    
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    
+    // Set CORS headers for SSE - allow your specific domain
+    const origin = res.req.headers.origin;
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001', 
+      'https://superstar-devapp-tsqup.ondigitalocean.app'
+    ];
+    
+    if (allowedOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      console.log('🟢 SSE CORS: Allowed origin:', origin);
+    } else if (!origin) {
+      // For same-origin requests (like when frontend is served by backend)
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      console.log('🟢 SSE CORS: Same-origin request, allowing all');
+    } else {
+      console.log('🔴 SSE CORS: Rejected origin:', origin);
+    }
+    
     res.setHeader('Access-Control-Allow-Headers', 'Cache-Control');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
 
+    console.log('🟢 SSE connection established, sending initial event');
     // Send initial connection confirmation
     res.write('data: {"type":"connected"}\n\n');
 
