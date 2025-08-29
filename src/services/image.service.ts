@@ -16,10 +16,11 @@ export class ImageService {
 
   /**
    * Compose final snapshot image
-   * Layout: 3x3 Grid matching frontend display
-   * [Logo_Left]    [User_Head]     [Logo_Right]
+   * New Layout: Perfect Cross pattern without logos
+   * [Empty]        [User_Head]     [Empty]
    * [Outfit_Left]  [Outfit_Top]    [Outfit_Right]  
-   * [Empty]        [Outfit_Bottom] [Outfit_Shoes]
+   * [Empty]        [Outfit_Bottom] [Empty]
+   * [Empty]        [Outfit_Shoes]  [Empty]
    */
   async composeSnapshot(
     userPhotoBuffer: Buffer,
@@ -27,26 +28,24 @@ export class ImageService {
     autoRotate: boolean = true, // Default true for mobile compatibility
   ): Promise<Buffer> {
     try {
-      // Grid configuration (3x3 layout)
+      // Grid configuration (3x4 layout for perfect cross)
       const gridCols = 3;
-      const gridRows = 3;
+      const gridRows = 4; // Extended to 4 rows for shoes at bottom
       const cellWidth = 400;
       const cellHeight = 300;
       const gap = 10;
       const padding = 20;
       
       const canvasWidth = (cellWidth * gridCols) + (gap * (gridCols - 1)) + (padding * 2);
-      const canvasHeight = (cellHeight * gridRows) + (gap * (gridRows - 1)) + (padding * 2);
+      const canvasHeight = (cellHeight * gridRows) + (gap * (gridRows - 1)) + (padding * 2); // Now taller
 
-      // Create base canvas
+      // Create base canvas 
       const canvas = sharp({
         create: {
           width: canvasWidth,
           height: canvasHeight,
           channels: 4,
-          // background: { r: 0, g: 0, b: 0, alpha: 1 }, // Black background like frontend
-          //white background for letterboxing
-        background: { r: 255, g: 255, b: 255, alpha: 1 } 
+          background: { r: 255, g: 255, b: 255, alpha: 1 } 
         },
       });
 
@@ -58,19 +57,7 @@ export class ImageService {
         left: padding + (col * (cellWidth + gap)),
       });
 
-      // Row 0, Col 0: Logo Left
-      if (fs.existsSync(this.logoLeftPath)) {
-        const { top, left } = getGridPosition(0, 0);
-        composite.push({
-          input: await sharp(this.logoLeftPath)
-            .resize(cellWidth, cellHeight, { fit: 'inside', background: { r: 0, g: 0, b: 0, alpha: 1 } })
-            .toBuffer(),
-          top,
-          left,
-        });
-      }
-
-      // Row 0, Col 1: User Head (center top)
+      // Row 0, Col 1: User Head (center top) - Main focal point
       const { top: headTop, left: headLeft } = getGridPosition(0, 1);
       let userPhotoProcessor = sharp(userPhotoBuffer);
       
@@ -83,8 +70,6 @@ export class ImageService {
       // Resize after rotation using 'contain' to preserve aspect ratio without cropping
       userPhotoProcessor = userPhotoProcessor.resize(cellWidth, cellHeight, { 
         fit: 'contain',
-        // background: { r: 0, g: 0, b: 0, alpha: 1 } // Black background for letterboxing
-        //white background for letterboxing
         background: { r: 255, g: 255, b: 255, alpha: 1 } 
       });
       
@@ -96,76 +81,61 @@ export class ImageService {
         left: headLeft,
       });
 
-      // Row 0, Col 2: Logo Right
-      if (fs.existsSync(this.logoRightPath)) {
-        const { top, left } = getGridPosition(0, 2);
-        composite.push({
-          input: await sharp(this.logoRightPath)
-            .resize(cellWidth, cellHeight, { fit: 'inside', background: { r: 0, g: 0, b: 0, alpha: 1 } })
-            .toBuffer(),
-          top,
-          left,
-        });
-      }
-
-      // Row 1, Col 0: Left Outfit
+      // Row 1, Col 0: Left Outfit (left arm position)
       if (outfits.left) {
         const outfitPath = path.join(process.cwd(), 'public', 'outfits', outfits.left);
         if (fs.existsSync(outfitPath)) {
           const { top, left } = getGridPosition(1, 0);
           const outfitResized = await sharp(outfitPath)
-            .resize(cellWidth, cellHeight, { fit: 'inside', background: { r: 0, g: 0, b: 0, alpha: 1 } })
+            .resize(cellWidth, cellHeight, { fit: 'inside', background: { r: 255, g: 255, b: 255, alpha: 1 } })
             .toBuffer();
           composite.push({ input: outfitResized, top, left });
         }
       }
 
-      // Row 1, Col 1: Top Outfit
+      // Row 1, Col 1: Top Outfit (torso/chest position)
       if (outfits.top) {
         const outfitPath = path.join(process.cwd(), 'public', 'outfits', outfits.top);
         if (fs.existsSync(outfitPath)) {
           const { top, left } = getGridPosition(1, 1);
           const outfitResized = await sharp(outfitPath)
-            .resize(cellWidth, cellHeight, { fit: 'inside', background: { r: 0, g: 0, b: 0, alpha: 1 } })
+            .resize(cellWidth, cellHeight, { fit: 'inside', background: { r: 255, g: 255, b: 255, alpha: 1 } })
             .toBuffer();
           composite.push({ input: outfitResized, top, left });
         }
       }
 
-      // Row 1, Col 2: Right Outfit
+      // Row 1, Col 2: Right Outfit (right arm position)
       if (outfits.right) {
         const outfitPath = path.join(process.cwd(), 'public', 'outfits', outfits.right);
         if (fs.existsSync(outfitPath)) {
           const { top, left } = getGridPosition(1, 2);
           const outfitResized = await sharp(outfitPath)
-            .resize(cellWidth, cellHeight, { fit: 'inside', background: { r: 0, g: 0, b: 0, alpha: 1 } })
+            .resize(cellWidth, cellHeight, { fit: 'inside', background: { r: 255, g: 255, b: 255, alpha: 1 } })
             .toBuffer();
           composite.push({ input: outfitResized, top, left });
         }
       }
 
-      // Row 2, Col 0: Empty (grid spacer)
-      // No image here, just empty space
-
-      // Row 2, Col 1: Bottom Outfit
+      // Row 2, Col 1: Bottom Outfit (legs/pants position)
       if (outfits.bottom) {
         const outfitPath = path.join(process.cwd(), 'public', 'outfits', outfits.bottom);
         if (fs.existsSync(outfitPath)) {
           const { top, left } = getGridPosition(2, 1);
           const outfitResized = await sharp(outfitPath)
-            .resize(cellWidth, cellHeight, { fit: 'inside', background: { r: 0, g: 0, b: 0, alpha: 1 } })
+            .resize(cellWidth, cellHeight, { fit: 'inside', background: { r: 255, g: 255, b: 255, alpha: 1 } })
             .toBuffer();
           composite.push({ input: outfitResized, top, left });
         }
       }
 
-      // Row 2, Col 2: Shoes
+      // Row 3, Col 1: Shoes (feet position - bottom of cross)
       if (outfits.shoes) {
         const outfitPath = path.join(process.cwd(), 'public', 'outfits', outfits.shoes);
         if (fs.existsSync(outfitPath)) {
-          const { top, left } = getGridPosition(2, 2);
+          const { top, left } = getGridPosition(3, 1); // Row 3 for perfect cross shape
           const outfitResized = await sharp(outfitPath)
-            .resize(cellWidth, cellHeight, { fit: 'inside', background: { r: 0, g: 0, b: 0, alpha: 1 } })
+            .resize(cellWidth, cellHeight, { fit: 'inside', background: { r: 255, g: 255, b: 255, alpha: 1 } })
             .toBuffer();
           composite.push({ input: outfitResized, top, left });
         }

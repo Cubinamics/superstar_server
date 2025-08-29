@@ -12,8 +12,8 @@ export class EmailService {
       port: 587,
       secure: false, // Use STARTTLS
       auth: {
-        user: process.env.MANDRILL_USERNAME || 'SAVVY PARTNERS MONOPROSOPI IKE', // Your Mandrill username (can be anything)
-        pass: process.env.MANDRILL_API_KEY || 'md-mb-7aMaglGgK5ZIHLvwKSQ', // Your Mandrill API key
+        user: 'SAVVY PARTNERS MONOPROSOPI IKE', // Your Mandrill username (can be anything)
+        pass: process.env.MANDRILL_API_KEY, // Your Mandrill API key
       },
       tls: {
         rejectUnauthorized: false,
