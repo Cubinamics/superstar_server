@@ -27,7 +27,7 @@ import { ApiKeyMiddleware } from './middleware/api-key.middleware';
     }),
     // Serve React build files from root path (fallback)
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', '..', 'superstar_front', 'build'),
+      rootPath: join(__dirname, '..', 'build'),
       exclude: ['/api*', '/events*', '/session*', '/outfits*', '/health*', '/public*'],
     }),
     // Configure multer for file uploads - keep in memory for processing
