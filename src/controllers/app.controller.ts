@@ -48,22 +48,32 @@ export class AppController {
     res.setHeader('CF-Cache-Status', 'DYNAMIC');
     res.setHeader('CF-RAY', 'bypass');
     
+    // Send headers immediately with 200 status
+    res.writeHead(200);
+    
     console.log('🟢 SSE connection established, sending initial event');
     // Send initial connection confirmation immediately
     res.write('data: {"type":"connected"}\n\n');
 
-    // Send keepalive every 30 seconds to prevent connection timeout
+    // Send keepalive every 10 seconds (shorter interval for testing)
     const keepaliveInterval = setInterval(() => {
       if (!res.destroyed) {
+        console.log('📡 Sending SSE keepalive');
         res.write('data: {"type":"keepalive"}\n\n');
+      } else {
+        console.log('🔴 SSE connection destroyed, clearing keepalive');
+        clearInterval(keepaliveInterval);
       }
-    }, 30000);
+    }, 10000);
 
     // Subscribe to events
     const subscription = this.eventsService.getEventStream().subscribe({
       next: (event) => {
         if (!res.destroyed) {
+          console.log('📤 Sending SSE event:', event.type, event.data ? 'with data' : 'no data');
           res.write(`data: ${JSON.stringify(event)}\n\n`);
+        } else {
+          console.log('🔴 Tried to send SSE event but connection destroyed');
         }
       },
       error: (error) => {
