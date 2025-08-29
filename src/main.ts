@@ -5,10 +5,15 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
+
   // Enable CORS for frontend communication
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:3001'], // Add your frontend URLs
+    origin: [
+      '*',
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://superstar-devapp-tsqup.ondigitalocean.app', // Your deployed frontend
+    ],
     credentials: true,
   });
 
@@ -18,7 +23,7 @@ async function bootstrap() {
   // Start server
   const port = process.env.PORT || 3001;
   await app.listen(port);
-  
+
   console.log(`🚀 Adidas Superstar Backend running on http://localhost:${port}`);
   console.log(`📡 SSE Events endpoint: http://localhost:${port}/api/events`);
   console.log(`🖼️  Static files served from: http://localhost:${port}/public/outfits/`);
