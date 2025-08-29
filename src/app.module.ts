@@ -8,6 +8,7 @@ import { EventsService } from './services/events.service';
 import { EmailService } from './services/email.service';
 import { ImageService } from './services/image.service';
 import { ApiKeyMiddleware } from './middleware/api-key.middleware';
+import { EventsGateway } from './gateways/events.gateway';
 
 @Module({
   imports: [
@@ -39,7 +40,7 @@ import { ApiKeyMiddleware } from './middleware/api-key.middleware';
     }),
   ],
   controllers: [AppController],
-  providers: [SessionService, EventsService, EmailService, ImageService],
+  providers: [SessionService, EventsService, EmailService, ImageService, EventsGateway],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

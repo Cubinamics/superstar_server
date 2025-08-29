@@ -7,7 +7,6 @@ import {
   UploadedFile,
   UseInterceptors,
   Res,
-  Sse,
   BadRequestException,
   NotFoundException,
   HttpException,
@@ -15,8 +14,6 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
-import { Observable, interval } from 'rxjs';
-import { map, switchMap, startWith } from 'rxjs';
 import { SessionService } from '../services/session.service';
 import { EventsService } from '../services/events.service';
 import { EmailService } from '../services/email.service';
@@ -30,35 +27,6 @@ export class AppController {
     private readonly emailService: EmailService,
     private readonly imageService: ImageService,
   ) {}
-
-  /**
-   * Server-Sent Events endpoint using NestJS SSE decorator (proxy-friendly)
-   */
-  @Sse('events')
-  getEvents(): Observable<any> {
-    console.log('🔴 SSE connection attempt');
-    console.log('🟢 SSE connection established with NestJS @Sse decorator');
-    
-    // Create a combined stream of events and keepalives
-    const eventsStream = this.eventsService.getEventStream().pipe(
-      map((event) => {
-        console.log('📤 Sending SSE event via @Sse:', event.type);
-        return { data: JSON.stringify(event) };
-      })
-    );
-    
-    const keepaliveStream = interval(15000).pipe(
-      map(() => {
-        console.log('📡 Sending SSE keepalive via @Sse');
-        return { data: JSON.stringify({ type: 'keepalive' }) };
-      })
-    );
-    
-    // Start with a connection event, then merge events and keepalives
-    return eventsStream.pipe(
-      startWith({ data: JSON.stringify({ type: 'connected' }) })
-    );
-  }
 
     /**
    * Create new session with photo and gender
