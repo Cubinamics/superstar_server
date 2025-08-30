@@ -174,7 +174,7 @@ export class ImageService {
   /**
    * Resize user photo for web display
    */
-  async resizeUserPhoto(buffer: Buffer, maxWidth = 300, maxHeight = 400): Promise<Buffer> {
+  async resizeUserPhoto(buffer: Buffer, maxWidth = 800, maxHeight = 1000): Promise<Buffer> {
     console.log('ImageService.resizeUserPhoto called with:', {
       bufferExists: !!buffer,
       bufferLength: buffer ? buffer.length : 0,
@@ -192,10 +192,29 @@ export class ImageService {
     }
 
     try {
-      return sharp(buffer)
-        .resize(maxWidth, maxHeight, { fit: 'inside' })
-        .jpeg({ quality: 80 })
-        .toBuffer();
+      // Get image metadata to preserve format
+      const metadata = await sharp(buffer).metadata();
+      const isJpeg = metadata.format === 'jpeg';
+      
+      const processedImage = sharp(buffer)
+        .resize(maxWidth, maxHeight, { 
+          fit: 'inside', 
+          withoutEnlargement: false,
+          // Use high-quality resampling
+          kernel: sharp.kernel.lanczos3 
+        });
+
+      // Preserve original format with high quality
+      if (isJpeg) {
+        return processedImage
+          .jpeg({ quality: 95, mozjpeg: true })
+          .toBuffer();
+      } else {
+        // For PNG/other formats, keep as PNG for better quality
+        return processedImage
+          .png({ quality: 100, compressionLevel: 6 })
+          .toBuffer();
+      }
     } catch (error) {
       console.error('Sharp error details:', error);
       throw error;
